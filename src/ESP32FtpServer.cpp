@@ -263,43 +263,49 @@ boolean FtpServer::processCommand()
   {
     if( strcmp( parameters, "." ) == 0 )  // 'CWD .' is the same as PWD command
       client.println( "257 \"" + String(cwdName) + "\" is your current directory");
-    else 
-      {      
+    else
+    {
 
-        #ifdef FTP_DEBUG
-        Serial.print("CWD P=");
-        Serial.print(parameters);
-        Serial.print(" CWD=");
-        Serial.println(cwdName);
-        #endif
-        String dir;
+      #ifdef FTP_DEBUG
+      Serial.print("CWD P=");
+      Serial.print(parameters);
+      Serial.print(" CWD=");
+      Serial.println(cwdName);
+      #endif
+      String dir;
 
-        if (parameters[0]=='/')
-        {
-          dir = parameters;
-        }
-        else if (!strcmp(cwdName,"/")) // avoid "\\newdir"
-        {
-          dir = String("/") + parameters;
-        }
-        else
-        {
-          dir = String(cwdName) +"/" + parameters;
-        }        
-
-        if (SD.exists(dir))
-        {
-          strcpy(cwdName, dir.c_str());
-          client.println( "250 CWD Ok. Current directory is \"" + String(dir) + "\"");
-          Serial.println( "250 CWD Ok. Current directory is \"" + String(dir) + "\"");
-        }
-        else
-        {
-          client.println( "550 directory or file does not exist \"" + String(parameters) + "\"");
-          Serial.println( "550 directory or file does not exist \"" + String(parameters) + "\"");
-        }
+      if (parameters[0]=='/')
+      {
+        dir = parameters;
       }
-    
+      else if (strcmp( parameters, ".." ) == 0) {
+        int li = String(cwdName).lastIndexOf("/");
+        if (li == 0) {
+          li = 1;
+        }
+        dir = String(cwdName).substring(0, li);
+      }
+      else if (!strcmp(cwdName,"/")) // avoid "\\newdir"
+      {
+        dir = String("/") + parameters;
+      }
+      else
+      {
+        dir = String(cwdName) +"/" + parameters;
+      }        
+
+      if (SD.exists(dir))
+      {
+        strcpy(cwdName, dir.c_str());
+        client.println( "250 CWD Ok. Current directory is \"" + String(dir) + "\"");
+        Serial.println( "250 CWD Ok. Current directory is \"" + String(dir) + "\"");
+      }
+      else
+      {
+        client.println( "550 directory or file does not exist \"" + String(parameters) + "\"");
+        Serial.println( "550 directory or file does not exist \"" + String(parameters) + "\"");
+      }
+    }
   }
   //
   //  PWD - Print Directory
@@ -510,8 +516,7 @@ boolean FtpServer::processCommand()
     		{
     			String fn,fs;
           fn = file.name();
-//          Serial.println(fn);
-    			fn.remove(0, strlen(cwdName));
+          // fn.remove(0, strlen(cwdName));
           if(fn[0] == '/') fn.remove(0, 1);
           fs = String(file.size());
           if(file.isDirectory()){
@@ -685,7 +690,8 @@ boolean FtpServer::processCommand()
     }
     else
     {
-      dir = String(cwdName) +"/" + parameters;
+      // dir = String(cwdName) +"/" + parameters;
+      dir = parameters;
     }
     fs::FS &fs = SD;
     if (fs.rmdir(dir.c_str()))
